@@ -318,14 +318,12 @@
         readTextFile("chart_data.json", function (text) {
             data = JSON.parse(text);
             data = data.reduce((subArray, chart) => {
-                console.log(subArray[subArray.length - 1].length)
                 if (subArray[subArray.length - 1].length == chart_count) {
                     subArray.push([]);
                 }
                 subArray[subArray.length - 1].push(chart);
                 return subArray;
             }, [[]]);
-            console.log(data)
             if (data.length > 1)
                 document.getElementById('next-btn').style.visibility = 'visible';
             chart_data = changeData(data[page - 1]);
