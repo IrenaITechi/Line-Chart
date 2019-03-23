@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Telegram charts</title>
+    <style>
+        :root {
+            --day-bg-color: #fff;
+            --day-txt-color: #000;
+            --day-border-color: #dfe6eb;
+            --day-tooltip-bg-color: #fff;
+            --night-bg-color: #242f3e;
+            --night-txt-color: #fff;
+            --night-border-color: #212c3a;
+            --night-tooltip-bg-color: #253241;
+            --main-padding: 15px;
+        }
+
+        body {
+            margin: 0;
+
+        }
+
+        #container {
+            display: flex;
+            flex-flow: row wrap;
+        }
+
+        .title {
+            margin: 30px;
+        }
+
+        div[id*=chart] {
+            flex: 1 1 47%;
+            margin-bottom: 10px;
+        }
+
+        div[class*=chart-wrapper] {
+            position: relative;
+            margin: 0;
+            width: 600px;
+        }
+
+        .night {
+            background-color: var(--night-bg-color);
+            color: var(--night-txt-color);
+        }
+
+        .day {
+            background-color: var(--day-bg-color);
+            color: var(--day-txt-color);
+        }
+
+        .chart-tooltip {
+            visibility: hidden;
+        }
+
+        div[id*=tooltip-content] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: auto;
+            border: 1px solid #dfe6eb;
+            border-radius: 5px;
+            padding: 10px;
+            z-index: 999;
+        }
+
+        div[id*=tooltip-content].day {
+            background-color: var(--day-bg-color);
+            border: 1px solid var(--day-border-color);
+            box-shadow: 0 0 10px var(--day-border-color);
+        }
+
+        div[id*=tooltip-content].night {
+            background-color: var(--night-bg-color);
+            border: 1px solid var(--night-border-color);
+            box-shadow: 0 0 10px var(--night-border-color);
+        }
+
+        div[class*=tooltip-header] {
+            font-weight: 700;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        div[class*=tooltip-header].day {
+            color: var(--day-txt-color);
+        }
+
+        div[class*=tooltip-header].night {
+            color: var(--night-txt-color);
+        }
+
+        div[id*=tooltip-body] {
+            display: flex;
+            text-align: center;
+        }
+
+        .tooltip-value {
+            font-weight: 900;
+            font-size: 17px;
+        }
+
+        .tooltip-name {
+            font-size: 14px;
+        }
+
+        .circle {
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            height: 7px;
+            width: 7px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .circle.day {
+            background-color: var(--day-bg-color);
+        }
+
+        .circle.night {
+            background-color: var(--night-bg-color);
+        }
+
+        div[class*=vl] {
+            top: 0;
+            position: absolute;
+        }
+
+        .vl.night {
+            border-left: 2px solid #3b4a5a;
+        }
+
+        .vl.day {
+            border-left: 2px solid var(--day-border-color);
+        }
+
+        div[class*=full] {
+            overflow: hidden;
+            position: relative;
+            width: 565px;
+            margin-left: 35px;
+            height: 100px;
+        }
+
+        div[class*=region] {
+            margin: 0;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 60px;
+            background-color: transparent;
+            height: 96px;
+            border-bottom: 2px solid rgba(87, 152, 197, 0.2);
+            border-top: 2px solid rgba(87, 152, 197, 0.2);
+            border-left: 6px solid rgba(87, 152, 197, 0.2);
+            border-right: 6px solid rgba(87, 152, 197, 0.2);
+
+        }
+
+        div[class*=region].day {
+
+            outline: solid 600px rgba(240, 247, 249, 0.7);
+        }
+
+        div[class*=region].night {
+            outline: solid 600px rgba(29, 40, 53, 0.7);
+        }
+
+
+        div[id*=checkboxes] {
+            margin-top: 10px;
+            margin-left: 35px;
+            display: flex;
+        }
+
+        .round {
+            margin-right: 5px;
+            position: relative;
+            border: 2px solid #e6ecf0;
+            width: 100px;
+            height: 40px;
+            border-radius: 50px;
+        }
+
+        .round.night {
+
+            border: 2px solid #344658;
+
+        }
+
+        .round.day {
+            border: 2px solid #e6ecf0;
+        }
+
+        .round label.inner {
+            border: 1px solid #5ec340;
+            border-radius: 50%;
+            cursor: pointer;
+            height: 28px;
+            left: 5px;
+            position: absolute;
+            top: 5px;
+            width: 28px;
+        }
+
+        .round label.inner:after {
+            border: 2px solid #fff;
+            border-top: none;
+            border-right: none;
+            content: "";
+            height: 6px;
+            left: 7px;
+            opacity: 0;
+            position: absolute;
+            top: 8px;
+            transform: rotate(-45deg);
+            width: 12px;
+        }
+
+        .round label.outer {
+            margin-left: 25px;
+            position: absolute;
+            top: 12px;
+        }
+
+        .round input[type="checkbox"] {
+            visibility: hidden;
+        }
+
+        .round input[type="checkbox"]:checked + label {
+            background-color: #5ec340;
+            border-color: #5ec340;
+        }
+
+        .round input[type="checkbox"]:checked + label:after {
+            opacity: 1;
+        }
+
+        .theme-btn {
+            color: #128be3;
+            background: transparent;
+            border: none;
+            text-align: center;
+            width: 100%;
+            height: 30px;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .theme-btn:focus {
+            border: none;
+            outline: none;
+        }
+
+        #name-mode {
+            text-transform: capitalize;
+        }
+
+        .pages {
+            display: flex;
+            flex-flow: row wrap;
+        }
+
+        #prev-btn {
+            visibility: hidden;
+            flex: 1 1 45%;
+            text-align: right;
+            margin-right: 20px;
+        }
+
+        #next-btn {
+            visibility: hidden;
+            flex: 1 1 45%;
+            text-align: left;
+            margin-left: 20px;
+        }
+
+        @media screen and (max-width: 1200px) {
+            #container {
+                display: table;
+                margin-left: auto;
+                margin-right: auto;
+            }
+        }
+    </style>
+</head>
+<body class="day">
+<div id="container"></div>
+<button onclick="changeTheme()" class="theme-btn"> Switch to <span id="name-mode">night</span> Mode</button>
+<div class="pages">
+    <button onclick="changePage('prev')" class="theme-btn" id="prev-btn"> Prev page</button>
+    <button onclick="changePage('next')" class="theme-btn" id="next-btn"> Next page</button>
+</div>
+</body>
+<script>
+    let data = [];
+    const chart_count = 5;
+    let page = 1;
+    let chart_data = {};
+    let dotsX = [];
+    let dotsY = [];
+    let dotsYX = [];
+    let onLeftEdge, onRightEdge, moving;
+    let element = [];
+    const min_size = 20;
+    const max_size = 555;
+    let BORDER = 4;
+    let original_width = 0;
+    let original_x = 0;
+    let original_mouse_x = 0;
+    let options = {month: 'short', day: 'numeric'};
+
+
+    window.onload = function () {
+        readTextFile("chart_data.json", function (text) {
+            data = JSON.parse(text);
+            data = data.reduce((subArray, chart) => {
+                console.log(subArray[subArray.length - 1].length)
+                if (subArray[subArray.length - 1].length == chart_count) {
+                    subArray.push([]);
+                }
+                subArray[subArray.length - 1].push(chart);
+                return subArray;
+            }, [[]]);
+            console.log(data)
+            if (data.length > 1)
+                document.getElementById('next-btn').style.visibility = 'visible';
+            chart_data = changeData(data[page - 1]);
+            let i = 0;
+            for (let key in chart_data) {
+                draw('full-' + key, chart_data, key, i);
+                redraw(element, i);
+                draw('step-' + key, chart_data, key, i);
+                i++;
+            }
+        });
+    };
+
+    // load json file
+    function readTextFile(file, callback) {
+        let rawFile = new XMLHttpRequest();
+        rawFile.overrideMimeType("application/json");
+        rawFile.open("GET", file, true);
+        rawFile.onreadystatechange = function () {
+            if (rawFile.readyState === 4 && rawFile.status == "200") {
+                callback(rawFile.responseText);
+            }
+        };
+        rawFile.send(null);
+    }
+
+    //change page if load data has more then 4 charts
+    function changePage(state) {
+        let prevBtn = document.getElementById('prev-btn');
+        let nextBtn = document.getElementById('next-btn');
+        state === 'next' ? page += 1 : page -= 1;
+        if (data.length <= page && page >= 0) {
+            nextBtn.style.visibility = 'hidden';
+            prevBtn.style.visibility = 'visible';
+        }
+        if (data.length > page && page >= 1) {
+            nextBtn.style.visibility = 'visible';
+            prevBtn.style.visibility = 'visible';
+        }
+        if (page == 1) {
+            nextBtn.style.visibility = 'visible';
+            prevBtn.style.visibility = 'hidden';
+        }
+        document.getElementById('container').innerHTML = "";
+        chart_data = [];
+        chart_data = changeData(data[page - 1]);
+        let i = 0;
+        for (let key in chart_data) {
+            draw('full-' + key, chart_data, key, i);
+            redraw(element, i);
+            draw('step-' + key, chart_data, key, i);
+            i++;
+        }
+    }
+
+    // rewrite data
+    function changeData(data) {
+        data.forEach((chart, index) => {
+            chart_data['chart' + index] = {};
+            creteDOMElements(chart, index);
+            for (let key in chart.types) {
+                chart.columns.forEach(column => {
+                    if (column.find(k => k === key)) {
+                        column = column.filter(item => item !== key);
+                        chart_data['chart' + index].options = {
+                            'start': 0,
+                            'end': 0
+                        };
+                        chart_data['chart' + index][key] = {
+                            'name': chart.names[key],
+                            'type': chart.types[key],
+                            'color': chart.colors[key],
+                            'allColumn': {...column},
+                            'visibleColumn': {...column},
+                            'max': Math.max(...column),
+                            'isVisible': true
+                        };
+                    }
+                })
+            }
+        });
+        return chart_data;
+    }
+
+    // create charts
+    function creteDOMElements(chart, index) {
+        let chartElement = document.createElement('div');
+        chartElement.id = 'chart' + index;
+        chartElement.innerHTML = '<div class="chart"><h2 class="title">Followers</h2><div id="chart' + index + '-wrapper" class="chart-wrapper"> <div id="chart' + index + '-tooltip" class="chart-tooltip"><div id="vl' + index + '" class="vl day"></div><div id="tooltip-content' + index + '" class="day"><div id="tooltip-header' + index + '" class="day"></div><div id="tooltip-body' + index + '"></div></div></div>\
+            <canvas id="step-chart' + index + '" onmousemove="tooltip(event, ' + index + ', this)"  onmouseout="hideTooltip(event, ' + index + ', this)" width="600" height="600"></canvas></div>\
+            <div class="full-chart"><canvas id="full-chart' + index + '" width="600" height="100"></canvas><div id="region' + index + '" class="region day"></div></div><div id="checkboxes' + index + '"></div></div>';
+        document.getElementById('container').appendChild(chartElement);
+        for (let key in chart.types) {
+            if (chart.types[key] === 'line') {
+                let div = document.createElement('div');
+                div.className = 'round day';
+                div.innerHTML =
+                    '<input type="checkbox" onclick="checkEvent(this,' + index + ');" id="' + key + index + '" name="' + key + '"  checked />\
+                                                        <label class="inner" style="border: 1px solid ' + chart.colors[key] + '" for="' + key + index + '"></label>\
+                                                        <label class="outer" for="' + key + index + '">' + chart.names[key] + '</label>';
+                document.getElementById('checkboxes' + index).appendChild(div);
+
+                let circle = document.createElement('div');
+                circle.className = 'circle day';
+                circle.id = "circle" + index + key;
+                document.getElementById('chart' + index + '-tooltip').appendChild(circle);
+
+                let tooltipValue = document.createElement('div');
+                tooltipValue.id = 'value' + index + key;
+
+                document.getElementById('tooltip-body' + index).appendChild(tooltipValue);
+                let styleElem = document.head.appendChild(document.createElement("style"));
+                styleElem.innerHTML = '.round input[type=\"checkbox\"]#' + key + index + ':checked + label {background-color: ' + chart.colors[key] + '; border-color: ' + chart.colors[key] + ';}' +
+                    '#circle' + index + key + '{border: 4px solid' + chart.colors[key] + '; } #value' + index + key + '{color: ' + chart.colors[key] + '; margin:10px}';
+            }
+        }
+    }
+
+    // find max y point
+    function max(chart_data) {
+        let lines = Object.keys(chart_data).filter(item => chart_data[item].type === 'line' && chart_data[item].isVisible);
+        let maxValue = lines.reduce((acc, curr) =>
+            acc.max ? (chart_data[curr].max > acc.max ? chart_data[curr] : acc) : chart_data[curr], {});
+        return Object.keys(maxValue).length === 0 ? 100 : maxValue.max;
+
+    }
+
+    // checkbox checked
+    function checkEvent(element, index) {
+        let id = element.id.slice(0, element.id.length - 1);
+        chart_data['chart' + index][id].isVisible = element.checked;
+        draw('full-chart' + index, chart_data, 'chart' + index, index);
+        draw('step-chart' + index, chart_data, 'chart' + index, index);
+    }
+
+    //draw charts
+    function draw(chartID, chart_data, key, index) {
+        dotsY[index] = [];
+        let canvas = document.getElementById(chartID);
+        let gr = canvas.getContext("2d");
+        gr.clearRect(0, 0, canvas.width, canvas.height);
+
+        let x0, y0, width, height, xLength, maxCount, stepY, stepX;
+        if (chartID === "step-" + key) {
+            x0 = 30;
+            y0 = 30;
+            width = canvas.width - 40;
+            height = canvas.height - 90;
+        } else {
+            x0 = 0;
+            y0 = 10;
+            width = canvas.width - 30;
+            height = canvas.height - 20;
+        }
+
+        let chart = chart_data[key];
+        chart = Object.keys(chart).filter(item => {
+                if (item !== 'options') {
+                    if (chartID === "step-" + key)
+                        chart[item].visibleColumn = Object.keys(chart[item].allColumn).filter(item => chart.options.start <= parseInt(item) && parseInt(item) <= chart.options.end)
+                            .reduce((obj, key) => ({
+                                ...obj,
+                                [key - chart.options.start]: chart[item].allColumn[key]
+                            }), {});
+                    else
+                        chart[item].visibleColumn = chart[item].allColumn;
+                    chart[item].max = Math.max.apply(null, Object.values(chart[item].visibleColumn));
+                }
+                return chart[item].isVisible
+            }
+        ).reduce((obj, key) => ({...obj, [key]: chart[key]}), {});
+
+        maxCount = max(chart_data[key]);
+        xLength = Object.keys(chart.x.visibleColumn).length;
+        stepY = height / maxCount;
+        stepX = width / xLength;
+        if (chartID === "step-" + key) {
+            gr.beginPath();
+            for (let i = 0; i < maxCount; i += Math.round(maxCount / 5)) {
+                gr.moveTo(x0, height - i * stepY + x0);
+                gr.lineTo(width + 30, height - i * stepY + x0);
+                gr.lineWidth = 0.09;
+                gr.strokeStyle = "#abb4bb";
+                gr.fillStyle = "#abb4bb";
+                gr.fillText(i, x0, height - i * stepY + 22);
+                gr.stroke();
+            }
+            for (let i = 0; i < xLength; i += Math.round(xLength / 6)) {
+                let m = 0;
+                let date = new Date(chart.x.visibleColumn[i]).toLocaleDateString("en-US", options);
+                let txtSize = gr.measureText(date);
+                if (i == 0)
+                    m = 15;
+                gr.fillText(date, i * stepX + txtSize.width / 2 + m, height + y0 * 2);
+            }
+            gr.stroke();
+            gr.closePath();
+        }
+        for (let g in chart) {
+            gr.beginPath();
+            let i = 0;
+            g === 'x' ? chartID === "step-" + key ? dotsYX[index] = [] : dotsX[index] = [] : [];
+            for (let m in chart.x.visibleColumn) {
+                let x = x0 + (i * stepX);
+                if (g === 'x') {
+                    chartID === "step-" + key ? dotsYX[index].push({
+                        x: x,
+                        date: chart[g].visibleColumn[m]
+                    }) : dotsX[index].push({x: x, date: chart[g].allColumn[m]});
+                } else {
+                    let count = chart[g].visibleColumn[m];
+                    let y = y0 + (height - count * stepY);
+                    if (chartID === "step-" + key) {
+                        dotsY[index].push({
+                            x: x,
+                            y: y,
+                            name: chart[g].name,
+                            color: chart[g].color,
+                            value: chart[g].visibleColumn[m]
+                        })
+                    }
+                    m == 0 ? gr.moveTo(x, y) : gr.lineTo(x, y);
+                }
+                i++;
+            }
+            gr.strokeStyle = chart[g].color;
+            gr.lineWidth = 2;
+            gr.stroke();
+            gr.closePath();
+        }
+        makeResizableDiv(index);
+
+    }
+
+    //resize div
+    function makeResizableDiv(index) {
+        element[index] = [];
+        element[index] = document.getElementById("region" + index);
+
+        //desktop
+        element[index].onmousedown = function (e) {
+            original_width = parseFloat(getComputedStyle(element[index], null).getPropertyValue('width').replace('px', ''));
+            original_x = element[index].getBoundingClientRect().left;
+            original_mouse_x = e.pageX;
+            let x = original_mouse_x - original_x;
+            onLeftEdge = x < BORDER;
+            onRightEdge = x >= original_width - BORDER;
+            moving = x > 0 && x < original_width;
+
+            resize(e, index);
+
+            document.onmousemove = function (e) {
+                resize(e, index);
+            };
+            element[index].onmouseup = function () {
+                document.onmousemove = null;
+                element[index].onmouseup = null;
+            }
+
+        };
+
+        // mobile
+        element[index].ontouchstart = function (e) {
+            original_width = parseFloat(getComputedStyle(element[index], null).getPropertyValue('width').replace('px', ''));
+            original_x = element[index].getBoundingClientRect().left;
+            original_mouse_x = e.touches[0].pageX;
+            let x = original_mouse_x - original_x;
+            onLeftEdge = x < BORDER;
+            onRightEdge = x >= original_width - BORDER;
+            moving = x > 0 && x < original_width;
+
+            resize(e.touches[0], index);
+
+            document.ontouchmove = function (e) {
+                resize(e.touches[0], index);
+            };
+            element[index].ontouchend = function () {
+                document.ontouchmove = null;
+                element[index].ontouchend = null;
+            }
+
+        };
+
+    }
+
+    //resize region
+    function resize(e, index) {
+        let width;
+        if (onRightEdge) {
+            width = original_width + (e.pageX - original_mouse_x);
+            if (width > min_size && width < max_size) {
+                element[index].style.width = width + 'px';
+                redraw(element, index)
+            }
+        }
+        if (onLeftEdge) {
+            width = original_width - (e.pageX - original_mouse_x);
+            if (width > min_size && width < max_size && e.pageX - 35 > 0) {
+                element[index].style.width = width + 'px';
+                element[index].style.left = original_x + (e.pageX - original_mouse_x - 35) + 'px'
+                redraw(element, index)
+            }
+        }
+        if (!onLeftEdge && !onRightEdge && moving) {
+            width = parseFloat(getComputedStyle(element[index], null).getPropertyValue('width').replace('px', ''));
+            let left = original_x + (e.pageX - original_mouse_x - 35);
+            if (left >= 0 && left + width < 555)
+                element[index].style.left = original_x + (e.pageX - original_mouse_x - 35) + 'px';
+            redraw(element, index)
+        }
+    }
+
+    // find closest value and redraw chart
+    function redraw(element, index) {
+        let closestRight = findClosest(element[index].offsetLeft + element[index].offsetWidth, dotsX[index]);
+        let closestLeft = findClosest(element[index].offsetLeft, dotsX[index]);
+        let end = Object.keys(chart_data['chart' + index].x.allColumn).find(key => chart_data['chart' + index].x.allColumn[key] === closestRight.date);
+        let start = Object.keys(chart_data['chart' + index].x.allColumn).find(key => chart_data['chart' + index].x.allColumn[key] === closestLeft.date);
+        chart_data['chart' + index].options.start = start;
+        chart_data['chart' + index].options.end = end;
+        draw('step-chart' + index, chart_data, 'chart' + index, index)
+
+    }
+
+    //find closest x value
+    function findClosest(x, arr) {
+        let indexArr = arr.map(function (k) {
+            return Math.abs(k.x - x)
+        });
+        let min = Math.min.apply(Math, indexArr);
+        return arr[indexArr.indexOf(min)]
+    }
+
+    // change mode
+    function changeTheme() {
+        let newTheme = (document.getElementById("name-mode").innerText).toLowerCase();
+        let originTheme = newTheme === 'night' ? 'day' : 'night';
+        let elements = document.querySelectorAll("." + originTheme);
+        for (let i in elements) {
+            if (elements.hasOwnProperty(i)) {
+                elements[i].classList.add(newTheme);
+                elements[i].classList.remove(originTheme);
+            }
+        }
+        document.getElementById("name-mode").innerHTML = originTheme;
+    }
+
+    // show tooltip and set properties
+    function tooltip(evt, index) {
+        let canvas = document.getElementById(evt.target.id);
+        let mousePos = getMousePos(canvas, evt);
+        let chartTooltip = document.getElementById("chart" + index + "-tooltip");
+        let tooltip = document.getElementById("tooltip-content" + index);
+        let vl = document.getElementById("vl" + index);
+        let tooltipHeader = document.getElementById("tooltip-header" + index);
+        let closest = findClosest(mousePos.x, dotsYX[index]);
+        let result = dotsY[index].filter(y => y.x == closest.x);
+        result.forEach((value, key) => {
+            let circle = document.getElementById("circle" + index + "y" + key);
+            let tooltipContent = document.getElementById("value" + index + "y" + key);
+            circle.style.left = value.x - 7 + 'px';
+            vl.style.left = value.x + 'px';
+            circle.style.top = value.y - 7 + 'px';
+            vl.style.height = canvas.height - 60 + 'px';
+            tooltipContent.innerHTML = '<div class="tooltip-value">' + value.value + '</div><div class="tooltip-name">' + value.name + '</div>'
+        });
+        if (mousePos.x - tooltip.clientWidth / 2 > 0) {
+            tooltip.style.left = mousePos.x - tooltip.clientWidth / 2 + 'px';
+            tooltipHeader.innerHTML = new Date(closest.date).toLocaleDateString("en-US", {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+        chartTooltip.style.visibility = 'visible';
+    }
+
+    // hide tooltip
+    function hideTooltip(event, index) {
+        let e = event.toElement || event.relatedTarget;
+        let chartTooltip = document.getElementById("chart" + index + "-tooltip");
+        if (e == null || e.parentNode.id !== 'chart' + index + '-tooltip' && e.parentNode.id !== 'tooltip-content' + index) {
+            chartTooltip.style.visibility = 'hidden';
+        }
+    }
+
+    // mouse position
+    function getMousePos(el, evt) {
+        let rect = el.getBoundingClientRect();
+        return {
+            x: evt.clientX - rect.left,
+            y: evt.clientY - rect.top
+        };
+    }
+
+</script>
+</html>
+
+
